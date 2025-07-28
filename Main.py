@@ -1,6 +1,8 @@
 import pygame
 import random
 import pgzrun
+import subprocess
+import sys
 
 WIDTH = 960
 HEIGHT = 600
@@ -47,7 +49,7 @@ def draw():
     global counter, speedshotscore, button_pressed
     screen.clear()
     screen.fill((249, 246, 232))
-    screen.blit(images.court2, (0, 180))
+    screen.blit(images.court, (0, 180))
 
 
 
@@ -131,7 +133,8 @@ def on_mouse_down(pos):
         timer_on = True
     if gamesbutton.collidepoint(pos):
         counter = "Games"
-
+        subprocess.Popen(["pgzrun", "Game.py"])  # launch MainG
+        sys.exit()  # close Main2 window
 
 def on_key_down(key):
     global ballcounter

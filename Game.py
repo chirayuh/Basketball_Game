@@ -6,8 +6,8 @@ WIDTH = 960
 HEIGHT = 600
 
 # Players
-player1 = Actor("player_copy", (300, 500))
-ai_player = Actor("player_red", (600, 500))  # Changed to a different color sprite and closer position
+player1 = Actor("player", (300, 500))
+ai_player = Actor("ai", (600, 500))  # Changed to a different color sprite and closer position
 
 # Ball setup
 ball = Actor("ball")
@@ -65,7 +65,7 @@ def reset_ball(a):
 def draw():
     screen.clear()
     screen.fill((249, 246, 232))
-    screen.blit("court2", (0, 180))
+    screen.blit("court", (0, 180))
 
     # Draw players and ball
     player1.draw()
@@ -85,15 +85,10 @@ def draw():
     # Draw prediction bar if timer active
 
     if prediction_timer > 0:
-
         bar_width = 300
-
         bar_height = 20
-
         bar_x = WIDTH // 2 - bar_width // 2
-
         bar_y = 100
-
         fill_width = int(bar_width * prediction_chance)
         screen.draw.text("Shot Accuracy", center=(WIDTH // 2, bar_y - 25), fontsize=30, color="black")
         screen.draw.filled_rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "gray")
@@ -101,6 +96,12 @@ def draw():
         screen.draw.rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "black")
 
     if timer == 0:
+        if score_p1>score_p2:
+            screen.draw.text("Player Wins!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="green")
+        elif score_p1==score_p2:
+            screen.draw.text("Draw!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="orange")
+        else:
+            screen.draw.text("AI Wins!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="red")
         screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="red")
 
 def update():
