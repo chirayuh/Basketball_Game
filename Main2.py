@@ -1,6 +1,6 @@
-# Write your code here :-)
 import pygame
 import random
+import pgzrun
 
 WIDTH = 960
 HEIGHT = 600
@@ -34,6 +34,7 @@ pointsbutton = Rect((360, 390), (200, 50))
 accountbutton = Rect((780, 40), (140, 50))
 tutorialbutton = Rect((40, 40), (140, 50))
 righthoop = Rect((800, 270), (70, 15))
+righthoopbackboard = Rect((800, 290), (70, 40))
 speedshotscore = 0
 
 
@@ -117,37 +118,7 @@ def draw():
         screen.draw.text("Score: " + str(speedshotscore), center=(WIDTH // 2, 130), color="black", fontsize=40)
         screen.draw.text("Timer: " + str(timer), center = (WIDTH // 2, 170), color="black", fontsize=40)
 
-    #if counter == "Games":
-        #timer = 180
-        #player.draw()
-        #ball.draw(
-        #screen.draw.filled_rect(righthoop, (0, 0, 0))
-        #screen.draw.text("Score: " + str(speedshotscore), center=(WIDTH // 2, 130), color="black", fontsize=40)
-        #screen.draw.text("Timer: " + str(timer), center = (WIDTH // 2, 170), color="black", fontsize=40)
-
-
-#def ai_player_movement():
-    #if ai_player.x < player.x:
-        #ai_player.x += 5
-        #check
-    #elif ai.player.x > player.x:
-        #ai_player.x -= 5
-    #if ai_player.y < player.y:
-        #ai_player.x += 5
-    #5 should be same speed as player movment
-    #elif for y for >
-
-#def steal_ball():
-    #global ball_who
-    #if ball_who == 'player' and ai_player.distance_to(ball) < 25:
-        #give ball to ai_player
-
-#def shoot_ball():
-    #random movment towards hoop
-    #random shoot time when getting 'close'
-
-
-
+   
 # for all collisions
 def on_mouse_down(pos):
     global counter, button_pressed, timer_on, games_submenu
@@ -222,3 +193,4 @@ def update():
         if player.right > 860:
             player.right = 860
 
+pgzrun.go()
