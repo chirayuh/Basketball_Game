@@ -7,8 +7,7 @@ import sys
 WIDTH = 960
 HEIGHT = 600
 counter = False  # keeps track of button click
-player = Actor("player_copy", (480, 550))
-#ai_player = Actor("player_copy", (400, 550))
+player = Actor("player", (480, 550))
 
 # Hoops
 left_hoop = Rect((90, 270), (70, 15))
@@ -59,7 +58,7 @@ fastfootworkbutton = Rect((540, 220), (250, 140))
 dogbutton = Rect((360, 420), (250, 140))
 
 def draw():
-    global counter, speedshotscore, button_pressed
+    global counter, speedshotscore, button_pressed,timer_on
     screen.clear()
     screen.fill((249, 246, 232))
     screen.blit(images.court, (0, 180))
@@ -74,6 +73,16 @@ def draw():
         screen.draw.filled_rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "gray")
         screen.draw.filled_rect(Rect((bar_x, bar_y), (fill_width, bar_height)), prediction_color)
         screen.draw.rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "black")
+    
+    if timer == 0:
+        #counter = True
+        timer_on = False
+        screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="red")
+        if(speedshotscore>=30):
+            screen.draw.text("Well done! You’ve completed the challenge.", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="green")
+        else:
+            screen.draw.text("Challenge Failed.", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="red")
+            screen.draw.text("Try again!", center=(WIDTH//2, HEIGHT//2+40), fontsize=60, color="red")
 
 
 
@@ -114,7 +123,7 @@ def draw():
         screen.draw.text("Tutorial", center=tutorialbutton.center, color="black", fontsize = 28)
 
         # Player
-        original = images.player_copy  # no .png
+        original = images.player  # no .png
         resized = pygame.transform.scale(original, (75, 180))
         screen.blit(resized, (650, 250))
 
@@ -132,11 +141,6 @@ def draw():
         screen.draw.text("D.O.G", center=dogbutton.center, color="white")
 
         screen.draw.text("Choose a challenge and try to earn some points!", center=(WIDTH // 2, 130), color="black", fontsize=40)
-
-        if timer == 0:
-            counter = True
-            screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="red")
-
 
     if counter == "Speed Shot":
         player.draw()
@@ -188,7 +192,8 @@ def resetball():
 
 def decreasetimer():
     global timer
-    timer -= 1
+    if timer > 0:
+        timer -= 1
 
 def startspeedshot():
     clock.schedule_interval(decreasetimer, 1.0)
