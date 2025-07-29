@@ -57,7 +57,6 @@ homebutton = Rect((40, 40), (140, 50))
 tryaginbutton = Rect((780, 40), (140, 50))
 accountbutton = Rect((780, 40), (140, 50))
 righthoop = Rect((800, 270), (70, 15))
-righthoopbackboard = Rect((800, 290), (70, 40))
 speedshotscore = 0
 
 
@@ -119,6 +118,17 @@ def reset_game_state():
     prediction_color = "gray"
     prediction_timer = 0
     timer_on = False
+
+state = {
+    'WIDTH': WIDTH,
+    'HEIGHT': HEIGHT,
+    'timer': timer,
+    'fastfootwork_score': fastfootwork_score,
+    'fastfootwork_circle': fastfootwork_circle,
+    'fastfootwork_radius': fastfootwork_radius,
+    'points': points,
+    'speedshotscore': speedshotscore,
+}
 
 def draw():
     global counter, speedshotscore, button_pressed, timer_on, points, points_log
@@ -310,6 +320,7 @@ def decreasetimer():
         timer -= 1
 
 def startspeedshot():
+    clock.unschedule(decreasetimer)  # Stop any previous timer
     clock.schedule_interval(decreasetimer, 1.0)
 
 def logicForSpeedShot():
@@ -344,6 +355,9 @@ def update():
             player.left = 100
         if player.right > 860:
             player.right = 860
+        if ball.colliderect(righthoopbackboard):
+            ballx = -ballx * 0.8
+            ball.x += ballx
         if ballcounter == False:
             ball.x = player.x - 6
             ball.y = player.y
