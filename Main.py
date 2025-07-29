@@ -79,7 +79,8 @@ def draw():
         timer_on = False
         screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="red")
         if(speedshotscore>=30):
-            screen.draw.text("Well done! You’ve completed the challenge.", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="green")
+            screen.draw.text("Well done!", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="green")
+            screen.draw.text("You’ve completed the challenge.", center=(WIDTH//2, HEIGHT//2+40), fontsize=60, color="green")
         else:
             screen.draw.text("Challenge Failed.", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="red")
             screen.draw.text("Try again!", center=(WIDTH//2, HEIGHT//2+40), fontsize=60, color="red")
