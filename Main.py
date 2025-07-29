@@ -40,13 +40,14 @@ def challengeaction():
     counter = True
 
 
-challengebutton = Rect((130, 250), (200, 60))
-customizebutton = Rect((130, 390), (200, 60))
-gamesbutton = Rect((360, 250), (200, 60))
-rankingbutton = Rect((360, 455), (200, 45))
-pointsbutton = Rect((360, 390), (200, 50))
+challengebutton = Rect((380, 250), (200, 60))
+gamesbutton = Rect((380, 340), (200, 60))
+rankingbutton = Rect((380, 430), (200, 60))
+pointsbutton = Rect((380, 520), (200, 50))
+tutorialbutton = Rect((780, 40), (140, 50))
+homebutton = Rect((40, 40), (140, 50))
+tryaginbutton = Rect((780, 40), (140, 50))
 accountbutton = Rect((780, 40), (140, 50))
-tutorialbutton = Rect((40, 40), (140, 50))
 righthoop = Rect((800, 270), (70, 15))
 righthoopbackboard = Rect((800, 290), (70, 40))
 speedshotscore = 0
@@ -57,35 +58,23 @@ speedshotbutton = Rect((170, 220), (250, 140))
 fastfootworkbutton = Rect((540, 220), (250, 140))
 dogbutton = Rect((360, 420), (250, 140))
 
+def reset_game_state():
+    global timer, speedshotscore, ballcounter, ballx, bally, prediction_chance, prediction_color, prediction_timer, timer_on
+    timer = 90
+    speedshotscore = 0
+    ballcounter = False
+    ballx = 0
+    bally = 0
+    prediction_chance = 0.0
+    prediction_color = "gray"
+    prediction_timer = 0
+    timer_on = False
+
 def draw():
     global counter, speedshotscore, button_pressed,timer_on
     screen.clear()
     screen.fill((249, 246, 232))
     screen.blit(images.court, (0, 180))
-
-    if prediction_timer > 0:
-        bar_width = 300
-        bar_height = 20
-        bar_x = WIDTH // 2 - bar_width // 2
-        bar_y = 100
-        fill_width = int(bar_width * prediction_chance)
-        screen.draw.text("Shot Accuracy", center=(WIDTH // 2, bar_y - 25), fontsize=30, color="black")
-        screen.draw.filled_rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "gray")
-        screen.draw.filled_rect(Rect((bar_x, bar_y), (fill_width, bar_height)), prediction_color)
-        screen.draw.rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "black")
-    
-    if timer == 0:
-        #counter = True
-        timer_on = False
-        screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="red")
-        if(speedshotscore>=30):
-            screen.draw.text("Well done!", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="green")
-            screen.draw.text("You’ve completed the challenge.", center=(WIDTH//2, HEIGHT//2+40), fontsize=60, color="green")
-        else:
-            screen.draw.text("Challenge Failed.", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="red")
-            screen.draw.text("Try again!", center=(WIDTH//2, HEIGHT//2+40), fontsize=60, color="red")
-
-
 
     # -------------- Buttons --------------
     if counter == False:
@@ -98,10 +87,6 @@ def draw():
         # Challenge button
         screen.draw.filled_rect(challengebutton, "#fdd76e")
         screen.draw.text("Challenges", center=challengebutton.center, color="black", fontsize=28)
-
-        # Customize button
-        screen.draw.filled_rect(customizebutton, "#fdb8b2")
-        screen.draw.text("Customize", center=customizebutton.center, color="black", fontsize=28)
 
         # Games button
         screen.draw.filled_rect(gamesbutton, "#a5cdff")
@@ -134,6 +119,9 @@ def draw():
         screen.draw.text("Speed Shot\n\nMake 30 baskets in 90 seconds", center=speedshotbutton.center, color="white")
         #screen.draw.text(, center = (200, 150), fontsize = 30, color="white")
 
+        # Home button
+        screen.draw.filled_rect(homebutton, "#baf3f7")
+        screen.draw.text("Home", center=homebutton.center, color="black", fontsize = 28)  
 
         screen.draw.filled_rect(fastfootworkbutton, "#960019")
         screen.draw.text("Fast Footwork", center=fastfootworkbutton.center, color="white")
@@ -144,11 +132,39 @@ def draw():
         screen.draw.text("Choose a challenge and try to earn some points!", center=(WIDTH // 2, 130), color="black", fontsize=40)
 
     if counter == "Speed Shot":
-        player.draw()
-        ball.draw()
-        screen.draw.filled_rect(righthoop, (0, 0, 0))
-        screen.draw.text("Score: " + str(speedshotscore), center=(WIDTH // 2, 130), color="black", fontsize=40)
-        screen.draw.text("Timer: " + str(timer), center = (WIDTH // 2, 170), color="black", fontsize=40)
+        if prediction_timer > 0:
+            bar_width = 300
+            bar_height = 20
+            bar_x = WIDTH // 2 - bar_width // 2
+            bar_y = 100
+            fill_width = int(bar_width * prediction_chance)
+            screen.draw.text("Shot Accuracy", center=(WIDTH // 2, bar_y - 25), fontsize=30, color="black")
+            screen.draw.filled_rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "gray")
+            screen.draw.filled_rect(Rect((bar_x, bar_y), (fill_width, bar_height)), prediction_color)
+            screen.draw.rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "black")
+    
+        if timer == 0:
+            #counter = True
+            timer_on = False
+            screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="red")
+            if(speedshotscore>=30):
+                screen.draw.text("Well done!", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="green")
+                screen.draw.text("You’ve completed the challenge.", center=(WIDTH//2, HEIGHT//2+40), fontsize=60, color="green")
+            else:
+                screen.draw.text("Challenge Failed.", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="red")
+                # Draw Try Again button
+                screen.draw.filled_rect(tryaginbutton, "#baf3f7")
+                screen.draw.text("Try Again", center=tryaginbutton.center, color="black", fontsize=28)
+        logicForSpeedShot()
+
+    if counter == "Home":
+        reset_game_state()  # <-- Add this line
+        counter = False
+    
+    if counter == "Try Again":
+        reset_game_state()
+        counter = "Speed Shot"
+
 
    
 # for all collisions
@@ -156,15 +172,21 @@ def on_mouse_down(pos):
     global counter, button_pressed, timer_on, games_submenu
     if challengebutton.collidepoint(pos):
         challengeaction()
-        #games_submenu = True
         return
     if speedshotbutton.collidepoint(pos) and counter == True:
         counter = "Speed Shot"
-        timer_on = True
+        reset_game_state()
+        startspeedshot()
     if gamesbutton.collidepoint(pos):
         counter = "Games"
         subprocess.Popen(["pgzrun", "Game.py"])  # launch MainG
         sys.exit()  # close Main2 window
+    if homebutton.collidepoint(pos):
+        counter = "Home"
+    if tryaginbutton.collidepoint(pos) and counter == "Speed Shot" and timer == 0:
+        reset_game_state()
+        counter = "Speed Shot"
+        timer_on = True
 
 def on_key_down(key):
     global ballcounter
@@ -199,13 +221,21 @@ def decreasetimer():
 def startspeedshot():
     clock.schedule_interval(decreasetimer, 1.0)
 
+def logicForSpeedShot():
+    global counter, speedshotscore, button_pressed,timer_on
+    player.draw()
+    ball.draw()
+    screen.draw.filled_rect(righthoop, (0, 0, 0))
+    screen.draw.text("Score: " + str(speedshotscore), center=(WIDTH // 2, 130), color="black", fontsize=40)
+    screen.draw.text("Timer: " + str(timer), center = (WIDTH // 2, 170), color="black", fontsize=40)
+    # Home button
+    screen.draw.filled_rect(homebutton, "#baf3f7")
+    screen.draw.text("Home", center=homebutton.center, color="black", fontsize = 28) 
+
 #should always be last
 def update():
     global counter, ballx, bally, speedshotscore, timer_on
     if counter == "Speed Shot" or counter == "Games":
-        if timer_on == True:
-            startspeedshot()
-            timer_on = False
         if keyboard.up:
             player.y -= 3
         if keyboard.down:
