@@ -14,6 +14,10 @@ left_hoop = Rect((90, 270), (70, 15))
 right_hoop = Rect((800, 270), (70, 15))
 righthoopbackboard = Rect((830, 230), (73, 35))
 
+fastfootwork_score = 0
+fastfootwork_circle = None  # (x, y)
+fastfootwork_radius = 20  # Radius of the circle
+
 # Ball setup
 ball = Actor("ball")
 ball.x = player.x - 6
@@ -57,6 +61,48 @@ speedshotscore = 0
 speedshotbutton = Rect((170, 220), (250, 140))
 fastfootworkbutton = Rect((540, 220), (250, 140))
 dogbutton = Rect((360, 420), (250, 140))
+
+def start_fastfootwork():
+    global timer, fastfootwork_score, fastfootwork_circle
+    reset_game_state()
+    timer = 90
+    fastfootwork_score = 0
+    # Player boundaries: left=100, right=860, top=406, bottom=HEIGHT
+    min_x = 100 + fastfootwork_radius
+    max_x = 860 - fastfootwork_radius
+    min_y = 406 + fastfootwork_radius
+    max_y = HEIGHT - fastfootwork_radius
+    fastfootwork_circle = (random.randint(min_x, max_x), random.randint(min_y, max_y))
+    startspeedshot()  # reuse timer logic
+
+def draw_fastfootwork():
+    global fastfootwork_circle, fastfootwork_score
+    # Draw the circle
+    if fastfootwork_circle:
+        screen.draw.filled_circle(fastfootwork_circle, fastfootwork_radius, "blue")
+    # Draw player and UI
+    player.draw()
+    screen.draw.text(f"Score: {fastfootwork_score}", center=(WIDTH // 2, 130), color="black", fontsize=40)
+    screen.draw.text(f"Timer: {timer}", center=(WIDTH // 2, 170), color="black", fontsize=40)
+    # Home button
+    screen.draw.filled_rect(homebutton, "#baf3f7")
+    screen.draw.text("Home", center=homebutton.center, color="black", fontsize=28)
+
+def logicForFastFootwork():
+    global fastfootwork_circle, fastfootwork_score
+    # Player boundaries: left=100, right=860, top=406, bottom=HEIGHT
+    min_x = 100 + fastfootwork_radius
+    max_x = 860 - fastfootwork_radius
+    min_y = 406 + fastfootwork_radius
+    max_y = HEIGHT - fastfootwork_radius
+    if fastfootwork_circle:
+        dx = player.x - fastfootwork_circle[0]
+        dy = player.y - fastfootwork_circle[1]
+        dist = (dx**2 + dy**2) ** 0.5
+        if dist < fastfootwork_radius + 40:  # 40 is half player width
+            fastfootwork_score += 1
+            fastfootwork_circle = (random.randint(min_x, max_x), random.randint(min_y, max_y))
+
 
 def reset_game_state():
     global timer, speedshotscore, ballcounter, ballx, bally, prediction_chance, prediction_color, prediction_timer, timer_on
@@ -157,8 +203,19 @@ def draw():
                 screen.draw.text("Try Again", center=tryaginbutton.center, color="black", fontsize=28)
         logicForSpeedShot()
 
+    if counter == "Fast Footwork":
+        if timer == 0:
+            screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="red")
+            screen.draw.text(f"Score: {fastfootwork_score}", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="black")
+            # Home button
+            screen.draw.filled_rect(homebutton, "#baf3f7")
+            screen.draw.text("Home", center=homebutton.center, color="black", fontsize=28)
+        else:
+            draw_fastfootwork()
+            logicForFastFootwork()
+
     if counter == "Home":
-        reset_game_state()  # <-- Add this line
+        reset_game_state()
         counter = False
     
     if counter == "Try Again":
@@ -177,6 +234,9 @@ def on_mouse_down(pos):
         counter = "Speed Shot"
         reset_game_state()
         startspeedshot()
+    if fastfootworkbutton.collidepoint(pos) and counter == True:
+        counter = "Fast Footwork"
+        start_fastfootwork()
     if gamesbutton.collidepoint(pos):
         counter = "Games"
         subprocess.Popen(["pgzrun", "Game.py"])  # launch MainG
@@ -186,7 +246,7 @@ def on_mouse_down(pos):
     if tryaginbutton.collidepoint(pos) and counter == "Speed Shot" and timer == 0:
         reset_game_state()
         counter = "Speed Shot"
-        timer_on = True
+        startspeedshot()
 
 def on_key_down(key):
     global ballcounter
@@ -256,8 +316,18 @@ def update():
                 resetball()
             if ball.y > HEIGHT or ball.x > WIDTH:
                 resetball()
+    if counter == "Fast Footwork":
+        # Player movement only
+        if keyboard.up:
+            player.y -= 3
+        if keyboard.down:
+            player.y += 3
+        if keyboard.left:
+            player.x -= 3
+        if keyboard.right:
+            player.x += 3
 
-
+        # Keep player in bounds
         if player.bottom < 406:
             player.bottom = 406
         if player.bottom > HEIGHT:
