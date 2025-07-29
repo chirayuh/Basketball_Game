@@ -9,6 +9,7 @@ HEIGHT = 600
 counter = False  # keeps track of button click
 player = Actor("player", (480, 550))
 
+
 # Hoops
 left_hoop = Rect((90, 270), (70, 15))
 right_hoop = Rect((800, 270), (70, 15))
@@ -37,6 +38,9 @@ button_pressed = False
 timer = 90
 timer_on = False
 games_submenu = False
+
+points = 0
+points_log = []
 
 
 def challengeaction():
@@ -89,8 +93,7 @@ def draw_fastfootwork():
     screen.draw.text("Home", center=homebutton.center, color="black", fontsize=28)
 
 def logicForFastFootwork():
-    global fastfootwork_circle, fastfootwork_score
-    # Player boundaries: left=100, right=860, top=406, bottom=HEIGHT
+    global fastfootwork_circle, fastfootwork_score, points
     min_x = 100 + fastfootwork_radius
     max_x = 860 - fastfootwork_radius
     min_y = 406 + fastfootwork_radius
@@ -99,8 +102,9 @@ def logicForFastFootwork():
         dx = player.x - fastfootwork_circle[0]
         dy = player.y - fastfootwork_circle[1]
         dist = (dx**2 + dy**2) ** 0.5
-        if dist < fastfootwork_radius + 40:  # 40 is half player width
+        if dist < fastfootwork_radius + 40:
             fastfootwork_score += 1
+            points += 2
             fastfootwork_circle = (random.randint(min_x, max_x), random.randint(min_y, max_y))
 
 
@@ -117,10 +121,21 @@ def reset_game_state():
     timer_on = False
 
 def draw():
-    global counter, speedshotscore, button_pressed,timer_on
+    global counter, speedshotscore, button_pressed, timer_on, points, points_log
     screen.clear()
     screen.fill((249, 246, 232))
     screen.blit(images.court, (0, 180))
+
+    if counter == "Points Log":
+        screen.draw.text("Points Log", center=(WIDTH//2, 60), color="black", fontsize=48)
+        y = 120
+        for entry in points_log[-10:][::-1]:  # Show last 10 entries, newest first
+            screen.draw.text(entry, topleft=(100, y), color="black", fontsize=32)
+            y += 40
+        # Back button
+        screen.draw.filled_rect(homebutton, "#baf3f7")
+        screen.draw.text("Back", center=homebutton.center, color="black", fontsize=28)
+        return
 
     # -------------- Buttons --------------
     if counter == False:
@@ -196,6 +211,10 @@ def draw():
             if(speedshotscore>=30):
                 screen.draw.text("Well done!", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="green")
                 screen.draw.text("You’ve completed the challenge.", center=(WIDTH//2, HEIGHT//2+40), fontsize=60, color="green")
+                if not hasattr(draw, "speed_shot_logged"):
+                    points += 40
+                    points_log.append("Speed Shot: 40")
+                    draw.speed_shot_logged = True
             else:
                 screen.draw.text("Challenge Failed.", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="red")
                 # Draw Try Again button
@@ -207,10 +226,18 @@ def draw():
         if timer == 0:
             screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="red")
             screen.draw.text(f"Score: {fastfootwork_score}", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="black")
+            # Log points only once at the end
+            if not hasattr(draw, "fastfootwork_logged"):
+                if fastfootwork_score > 0:
+                    points_log.append(f"Fast Footwork: {fastfootwork_score * 2}")
+                draw.fastfootwork_logged = True
             # Home button
             screen.draw.filled_rect(homebutton, "#baf3f7")
             screen.draw.text("Home", center=homebutton.center, color="black", fontsize=28)
         else:
+            # Reset the log flag when challenge is running
+            if hasattr(draw, "fastfootwork_logged"):
+                del draw.fastfootwork_logged
             draw_fastfootwork()
             logicForFastFootwork()
 
@@ -247,6 +274,10 @@ def on_mouse_down(pos):
         reset_game_state()
         counter = "Speed Shot"
         startspeedshot()
+    if pointsbutton.collidepoint(pos) and counter == False:
+        counter = "Points Log"
+    if homebutton.collidepoint(pos) and counter == "Points Log":
+        counter = False
 
 def on_key_down(key):
     global ballcounter
