@@ -335,6 +335,15 @@ def update():
             player.x -= 3
         if keyboard.right:
             player.x += 3
+        # Keep player in bounds (same as Fast Footwork)
+        if player.bottom < 406:
+            player.bottom = 406
+        if player.bottom > HEIGHT:
+            player.bottom = HEIGHT
+        if player.left < 100:
+            player.left = 100
+        if player.right > 860:
+            player.right = 860
         if ballcounter == False:
             ball.x = player.x - 6
             ball.y = player.y
