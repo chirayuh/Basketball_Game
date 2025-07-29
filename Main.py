@@ -9,6 +9,13 @@ HEIGHT = 600
 counter = False  # keeps track of button click
 player = Actor("player_copy", (480, 550))
 #ai_player = Actor("player_copy", (400, 550))
+
+# Hoops
+left_hoop = Rect((90, 270), (70, 15))
+right_hoop = Rect((800, 270), (70, 15))
+righthoopbackboard = Rect((830, 230), (73, 35))
+
+# Ball setup
 ball = Actor("ball")
 ball.x = player.x - 6
 ball.y = player.y
@@ -17,6 +24,12 @@ ball_who = 'player'
 ballx = 0
 bally = 0
 gravity = 0.3
+
+# Prediction UI
+prediction_chance = 0.0
+prediction_color = "gray"
+prediction_timer = 0
+
 button_pressed = False
 timer = 90
 timer_on = False
@@ -50,6 +63,17 @@ def draw():
     screen.clear()
     screen.fill((249, 246, 232))
     screen.blit(images.court, (0, 180))
+
+    if prediction_timer > 0:
+        bar_width = 300
+        bar_height = 20
+        bar_x = WIDTH // 2 - bar_width // 2
+        bar_y = 100
+        fill_width = int(bar_width * prediction_chance)
+        screen.draw.text("Shot Accuracy", center=(WIDTH // 2, bar_y - 25), fontsize=30, color="black")
+        screen.draw.filled_rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "gray")
+        screen.draw.filled_rect(Rect((bar_x, bar_y), (fill_width, bar_height)), prediction_color)
+        screen.draw.rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "black")
 
 
 
@@ -111,6 +135,7 @@ def draw():
 
         if timer == 0:
             counter = True
+            screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="red")
 
 
     if counter == "Speed Shot":
@@ -139,11 +164,21 @@ def on_mouse_down(pos):
 def on_key_down(key):
     global ballcounter
     global ballx
-    global bally
+    global bally, prediction_chance, prediction_color, prediction_timer
     if key == keys.SPACE and ballcounter == False:
         ballx = random.uniform(6, 9)
         bally = random.uniform(-10, -13)
         ballcounter = True
+        # Predict shot success based on simple angle
+        distance_to_hoop = ((player.x - right_hoop.centerx)**2 + (player.y - right_hoop.centery)**2) ** 0.5
+        prediction_chance = max(0, min(1, 1 - (distance_to_hoop / 600)))
+        if prediction_chance > 0.75:
+            prediction_color = "green"
+        elif prediction_chance > 0.4:
+            prediction_color = "yellow"
+        else:
+            prediction_color = "red"
+        prediction_timer = 60
 
 def resetball():
     global ballcounter
