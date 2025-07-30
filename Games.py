@@ -1,5 +1,7 @@
 import pgzrun
 import random
+import sys
+import subprocess
 from pgzero.builtins import Actor, Rect, keyboard
 
 WIDTH = 960
@@ -7,7 +9,7 @@ HEIGHT = 600
 
 # Players
 player1 = Actor("player", (300, 500))
-ai_player = Actor("ai", (600, 500))  # Changed to a different color sprite and closer position
+ai_player = Actor("player_red", (600, 500))  # Changed to a different color sprite and closer position
 
 # Ball setup
 ball = Actor("ball")
@@ -38,6 +40,8 @@ prediction_timer = 0
 # Game State
 game_state = "home"
 
+homebutton = Rect((40, 40), (140, 50))  # Add this near the top with other buttons
+
 def startspeedshot():
     clock.schedule_interval(decrease_timer, 1.0)
 
@@ -65,7 +69,7 @@ def reset_ball(a):
 def draw():
     screen.clear()
     screen.fill((249, 246, 232))
-    screen.blit("court", (0, 180))
+    screen.blit("court2", (0, 180))
 
     # Draw players and ball
     player1.draw()
@@ -103,6 +107,10 @@ def draw():
         else:
             screen.draw.text("AI Wins!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="red")
         screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="red")
+
+    # Draw Home button
+    screen.draw.filled_rect(homebutton, "#baf3f7")
+    screen.draw.text("Home", center=homebutton.center, color="black", fontsize=28)
 
 def update():
     global ballx, bally, score_p1, score_p2, ball_owner, ball_in_motion, timer_on, prediction_timer
@@ -265,4 +273,9 @@ def shoot_ai():
         bally = random.uniform(-10, -13)
         ball_in_motion = True
 
-pgzrun.go()
+def on_mouse_down(pos):
+    if homebutton.collidepoint(pos):
+        # Relaunch Main.py and close this window
+        subprocess.Popen(["pgzrun", "Main.py"])
+        sys.exit()
+    # ...add any other mouse handling here if needed...
