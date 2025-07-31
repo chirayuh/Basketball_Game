@@ -3,17 +3,20 @@ import random
 import pgzrun
 import subprocess
 import sys
+from datetime import date
 from Tutorial import print_tutorial
 
 WIDTH = 960
 HEIGHT = 600
 counter = False  # keeps track of button click
-player = Actor("player", (480, 550))
-ai_player = Actor("player_red", (600, 500))
 
-# Scores and timer
-playerscore = 0
-aiscore = 0
+player = Actor("player", (480, 550))
+ai_player = Actor("player_red", (600, 500))  # Changed to a different color sprite and closer position
+
+score_sound = sounds.score
+gameover_sound = sounds.gameover
+start_sound = sounds.start_game
+board_bounce_sound = sounds.board_bounce
 
 
 # Hoops
@@ -31,11 +34,13 @@ ball.x = player.x - 6
 ball.y = player.y
 ballcounter = False
 ball_in_motion = False
-ball_who = 'player'
-ball_owner = 'player1'
+ball_owner = 'player'
 ballx = 0
 bally = 0
 gravity = 0.3
+score_p1 = 0
+score_p2 = 0
+
 
 # Prediction UI
 prediction_chance = 0.0
@@ -43,7 +48,7 @@ prediction_color = "gray"
 prediction_timer = 0
 
 button_pressed = False
-timer = 70
+timer = 9
 timer_on = False
 games_submenu = False
 
@@ -57,7 +62,7 @@ input_text = ""
 rankings = {
     "Speed Shot": [],
     "Fast Footwork": [],
-    "Games": []
+    "Games" : []
 }
 
 
@@ -66,10 +71,10 @@ def challengeaction():
     counter = True
 
 
-challengebutton = Rect((380, 250), (200, 60))
-gamesbutton = Rect((380, 340), (200, 60))
-rankingbutton = Rect((380, 430), (200, 60))
-pointsbutton = Rect((380, 520), (200, 50))
+challengebutton = Rect((380, 240), (200, 60))
+gamesbutton = Rect((380, 330), (200, 60))
+rankingbutton = Rect((380, 420), (200, 60))
+pointsbutton = Rect((380, 510), (200, 50))
 tutorialbutton = Rect((780, 40), (140, 50))
 homebutton = Rect((40, 40), (140, 50))
 tryaginbutton = Rect((780, 40), (140, 50))
@@ -77,15 +82,31 @@ accountbutton = Rect((780, 40), (140, 50))
 righthoop = Rect((800, 270), (70, 15))
 speedshotscore = 0
 
+
+
 speedshotbutton = Rect((130, 240), (300, 210))
 fastfootworkbutton = Rect((530, 240), (300, 210))
+
+def reset_ball(a):
+    global ball_in_motion, ballx, bally
+    #if ball_owner == 'player':
+       # ball.x = player.x - 6
+        #ball.y = player.y
+   # else:
+        #ball.x = ai_player.x - 6
+        #ball.y = ai_player.y
+    ball.x = a.x
+    ball.y = a.y
+    ball_in_motion = False
+    ballx = 0
+    bally = 0
 
 def start_fastfootwork():
     if hasattr(draw, "fastfootwork_ranked"):
         del draw.fastfootwork_ranked
     global timer, fastfootwork_score, fastfootwork_circle
     reset_game_state()
-    timer = 70
+    timer = 9
     fastfootwork_score = 0
     # Player boundaries: left=100, right=860, top=406, bottom=HEIGHT
     min_x = 100 + fastfootwork_radius
@@ -93,7 +114,9 @@ def start_fastfootwork():
     min_y = 406 + fastfootwork_radius
     max_y = HEIGHT - fastfootwork_radius
     fastfootwork_circle = (random.randint(min_x, max_x), random.randint(min_y, max_y))
-    startspeedshot()  # reuse timer logic
+    clock.unschedule(decreasetimer)  # Stop any previous timer
+    clock.schedule_interval(decreasetimer, 1.0)
+    #startgames()
 
 def draw_fastfootwork():
     global fastfootwork_circle, fastfootwork_score
@@ -120,13 +143,14 @@ def logicForFastFootwork():
         dist = (dx**2 + dy**2) ** 0.5
         if dist < fastfootwork_radius + 40:
             fastfootwork_score += 2
+            score_sound.play()
             points += 2
             fastfootwork_circle = (random.randint(min_x, max_x), random.randint(min_y, max_y))
 
 
 def reset_game_state():
     global timer, speedshotscore, ballcounter, ballx, bally, prediction_chance, prediction_color, prediction_timer, timer_on
-    timer = 90
+    timer = 9
     speedshotscore = 0
     ballcounter = False
     ballx = 0
@@ -145,8 +169,6 @@ state = {
     'fastfootwork_radius': fastfootwork_radius,
     'points': points,
     'speedshotscore': speedshotscore,
-    'playerscore':playerscore,
-    'aiscore':aiscore
 }
 
 def draw():
@@ -169,15 +191,17 @@ def draw():
         return
 
     if counter == "Points Log":
-        screen.draw.text("Points Log", center=(WIDTH//2, 60), color="black", fontsize=48)
+        screen.draw.text("Points Log", center=(WIDTH // 2, 60), color="black", fontsize=48)
         y = 120
         for entry in points_log[-10:][::-1]:  # Show last 10 entries, newest first
-            screen.draw.text(entry, topleft=(100, y), color="black", fontsize=32)
+            screen.draw.text(entry, topleft=(WIDTH // 2 -110, y), color="black", fontsize=32)
             y += 40
         # Back button
         screen.draw.filled_rect(homebutton, "#baf3f7")
-        screen.draw.text("Back", center=homebutton.center, color="black", fontsize=28)
+        screen.draw.text("Home", center=homebutton.center, color="black", fontsize=28)
         return
+    
+
 
     if counter == "Ranking":
         screen.clear()
@@ -200,15 +224,15 @@ def draw():
             y += 20
         # Back button
         screen.draw.filled_rect(homebutton, "#baf3f7")
-        screen.draw.text("Back", center=homebutton.center, color="black", fontsize=28)
+        screen.draw.text("Home", center=homebutton.center, color="black", fontsize=28)
         return
 
     # -------------- Buttons --------------
     if counter == False:
         # -------- Header ----------
 
-        screen.draw.text("Welcome to the Basketball Game!", center=(WIDTH // 2, 130), color="black", fontsize=40,)
-
+        screen.draw.text("Welcome to Hoop Mania!", center=(WIDTH // 2, 130), color="black", fontsize=40,)
+        screen.draw.text(str(date.today()), center = (90, 65), color = "black", fontsize = 33)
         screen.draw.text("Continue your journey:", center=(WIDTH // 2, 170), color="black", fontsize=30)
 
         # Challenge button
@@ -258,14 +282,93 @@ def draw():
 
         screen.draw.text("Choose a challenge and try to earn some points!", center=(WIDTH // 2, 150), color="black", fontsize=40)
 
+    if counter == "Games":
+        screen.clear()
+        screen.fill((249, 246, 232))
+        screen.blit("court2", (0, 180))
+
+        # Draw players and ball
+        player.draw()
+        ai_player.draw()
+        ball.draw()
+
+        # Draw scores and timer
+        screen.draw.text(f"P1 Score: {score_p1}", midtop=(200, 10), fontsize=30, color="black")
+        screen.draw.text(f"AI Score: {score_p2}", midtop=(760, 10), fontsize=30, color="black")
+        screen.draw.text(f"Timer: {timer}", center=(WIDTH//2, 60), fontsize=40, color="black")
+        screen.draw.filled_rect(homebutton, "#baf3f7")
+        screen.draw.text("Home", center=homebutton.center, color="black", fontsize=28)
+        if prediction_timer > 0:
+            bar_width = 300
+            bar_height = 20
+            bar_x = WIDTH // 2 - bar_width // 2
+            bar_y = 160
+            fill_width = int(bar_width * prediction_chance)
+            screen.draw.text("Shot Accuracy", center=(WIDTH // 2, bar_y - 25), fontsize=30, color="black")
+            screen.draw.filled_rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "gray")
+            screen.draw.filled_rect(Rect((bar_x, bar_y), (fill_width, bar_height)), prediction_color)
+            screen.draw.rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "black")
+
+        if timer == 0:
+            #counter = True
+            timer_on = False
+            gameover_sound.play()
+            screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="red")
+            if(score_p1>score_p2):
+                screen.draw.text("Well done!", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="green")
+                screen.draw.text("You’ve won the game -- 100 points!", center=(WIDTH//2, HEIGHT//2+40), fontsize=60, color="green")
+                if not hasattr(draw, "games_logged"):
+                    points += 100
+                    points_log.append("Games: 100")
+                    draw.games_logged = True
+                    # Player wins
+                    if counter == "Games":
+                        if timer == 0:
+                            if not hasattr(draw, "speed_shot_ranked"):
+                                rankings["Games"].append((player_name, points))
+                                rankings["Games"].sort(key=lambda x: x[1], reverse=True)
+                                rankings["Games"] = rankings["Games"][:3]
+                                draw.games_ranked = True
+            if(score_p1==score_p2):
+                screen.draw.text("Draw!", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="orange")
+                screen.draw.text("You have tied the game -- 30 points.", center=(WIDTH//2, HEIGHT//2+40), fontsize=60, color="green")
+                if not hasattr(draw, "games_logged"):
+                    points += 30
+                    points_log.append("Games: 30")
+                    draw.games_logged = True
+                    # draw
+                    if counter == "Games":
+                        if timer == 0:
+                            if not hasattr(draw, "speed_shot_ranked"):
+                                rankings["Games"].append((player_name, speedshotscore))
+                                rankings["Games"].sort(key=lambda x: x[1], reverse=True)
+                                rankings["Games"] = rankings["Games"][:3]
+                                draw.games_ranked = True
+            if(score_p1<score_p2):
+                screen.draw.text("Loss!", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="orange")
+                screen.draw.text("You have lost the game -- 10 points.", center=(WIDTH//2, HEIGHT//2+40), fontsize=60, color="green")
+                if not hasattr(draw, "games_logged"):
+                    points += 10
+                    points_log.append("Games: 10")
+                    draw.games_logged = True
+                    # Player loses
+                    if counter == "Games":
+                        if timer == 0:
+                            if not hasattr(draw, "speed_shot_ranked"):
+                                rankings["Games"].append((player_name, speedshotscore))
+                                rankings["Games"].sort(key=lambda x: x[1], reverse=True)
+                                rankings["Games"] = rankings["Games"][:3]
+                                draw.games_ranked = True
+
+
     if counter == "Speed Shot":
         if prediction_timer > 0:
             bar_width = 300
             bar_height = 20
             bar_x = WIDTH // 2 - bar_width // 2
-            bar_y = 100
+            bar_y = 200
             fill_width = int(bar_width * prediction_chance)
-            screen.draw.text("Shot Accuracy", center=(WIDTH // 2, bar_y - 45), fontsize=30, color="black")
+            screen.draw.text("Shot Accuracy", center=(WIDTH // 2, bar_y - 30), fontsize=30, color="black")
             screen.draw.filled_rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "gray")
             screen.draw.filled_rect(Rect((bar_x, bar_y), (fill_width, bar_height)), prediction_color)
             screen.draw.rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "black")
@@ -273,6 +376,7 @@ def draw():
         if timer == 0:
             #counter = True
             timer_on = False
+            gameover_sound.play()
             screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="red")
             if(speedshotscore>=30):
                 screen.draw.text("Well done!", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="green")
@@ -284,71 +388,25 @@ def draw():
                     # Speed Shot
                     if counter == "Speed Shot":
                         if timer == 0:
+                            # ...existing code...
                             if not hasattr(draw, "speed_shot_ranked"):
                                 rankings["Speed Shot"].append((player_name, speedshotscore))
                                 rankings["Speed Shot"].sort(key=lambda x: x[1], reverse=True)
                                 rankings["Speed Shot"] = rankings["Speed Shot"][:3]
                                 draw.speed_shot_ranked = True
+            if(score_p1>score_p2):
+                screen.draw.text
+                        
             else:
                 screen.draw.text("Challenge Failed.", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="red")
                 # Draw Try Again button
                 screen.draw.filled_rect(tryaginbutton, "#baf3f7")
                 screen.draw.text("Try Again", center=tryaginbutton.center, color="black", fontsize=28)
         logicForSpeedShot()
-    
-    if counter == "Games":
-        screen.clear()
-        screen.fill((249, 246, 232))
-        screen.blit("court2", (0, 180))
-
-        # Draw players and ball
-        player.draw()
-        ai_player.draw()
-        ball.draw()
-        # Draw scores and timer
-        screen.draw.text(f"P1 Score: {playerscore}", midtop=(200, 10), fontsize=30, color="black")
-        screen.draw.text(f"AI Score: {aiscore}", midtop=(760, 10), fontsize=30, color="black")
-        screen.draw.text(f"Timer: {timer}", center=(WIDTH//2, 40), fontsize=40, color="black")
-        if prediction_timer > 0:
-            bar_width = 300
-            bar_height = 20
-            bar_x = WIDTH // 2 - bar_width // 2
-            bar_y = 100
-            fill_width = int(bar_width * prediction_chance)
-            screen.draw.text("Shot Accuracy", center=(WIDTH // 2, bar_y - 45), fontsize=30, color="black")
-            screen.draw.filled_rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "gray")
-            screen.draw.filled_rect(Rect((bar_x, bar_y), (fill_width, bar_height)), prediction_color)
-            screen.draw.rect(Rect((bar_x, bar_y), (bar_width, bar_height)), "black")
-    
-        if timer == 0:
-            #counter = True
-            timer_on = False
-            if playerscore>aiscore:
-                screen.draw.text("Player Wins!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="green")
-            elif playerscore==aiscore:
-                screen.draw.text("Draw!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="orange")
-            else:
-                screen.draw.text("AI Wins!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="red")
-            screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="red")
-            screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="red")
-            if not hasattr(draw, "games_logged"):
-                    points += 100
-                    points_log.append("Games: 100")
-                    draw.games_logged = True
-                    # Games
-                    if counter == "Games":
-                        if timer == 0:
-                            if not hasattr(draw, "games_ranked"):
-                                rankings["Games"].append((player_name, speedshotscore))
-                                rankings["Games"].sort(key=lambda x: x[1], reverse=True)
-                                rankings["Games"] = rankings["Games"][:3]
-                                draw.games_ranked = True
-
-        logicForGames()
-        
 
     if counter == "Fast Footwork":
         if timer == 0:
+            gameover_sound.play()
             screen.draw.text("Game Over!", center=(WIDTH//2, HEIGHT//2-40), fontsize=60, color="red")
             screen.draw.text(f"Score: {fastfootwork_score}", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="black")
             # Log points only once at the end
@@ -359,6 +417,7 @@ def draw():
                 # Fast Footwork
                 if counter == "Fast Footwork":
                     if timer == 0:
+                        # ...existing code...
                         if not hasattr(draw, "fastfootwork_ranked"):
                             rankings["Fast Footwork"].append((player_name, fastfootwork_score * 2))
                             rankings["Fast Footwork"].sort(key=lambda x: x[1], reverse=True)
@@ -401,8 +460,6 @@ def on_mouse_down(pos):
         counter = "Games"
         reset_game_state()
         startgames()
-        #subprocess.Popen(["pgzrun", "Games.py"])  # launch MainG
-        #sys.exit()  # close Main2 window
     if homebutton.collidepoint(pos):
         counter = "Home"
     if tryaginbutton.collidepoint(pos) and counter == "Speed Shot" and timer == 0:
@@ -427,10 +484,10 @@ def on_mouse_down(pos):
         return
 
 def on_key_down(key):
-    global input_active, input_text, player_name
+    global input_active, input_text, player_name, ball_in_motion
     if input_active:
         if key.name == "RETURN":
-            player_name = input_text if input_text.strip() else "Player1"
+            player_name = input_text if input_text.strip() else "player"
             input_active = False
         elif key.name == "BACKSPACE":
             input_text = input_text[:-1]
@@ -440,6 +497,20 @@ def on_key_down(key):
     global ballcounter
     global ballx
     global bally, prediction_chance, prediction_color, prediction_timer
+    if counter == "Games" and key == keys.SPACE and not ball_in_motion and ball_owner == 'player':
+        ballx = random.uniform(6, 9)
+        bally = random.uniform(-10, -13)
+        ball_in_motion = True
+        # Predict shot success based on simple angle
+        distance_to_hoop = ((player.x - right_hoop.centerx)**2 + (player.y - right_hoop.centery)**2) ** 0.5
+        prediction_chance = max(0, min(1, 1 - (distance_to_hoop / 600)))
+        if prediction_chance > 0.75:
+            prediction_color = "green"
+        elif prediction_chance > 0.4:
+            prediction_color = "yellow"
+        else:
+            prediction_color = "red"
+        prediction_timer = 60
     if key == keys.SPACE and ballcounter == False:
         ballx = random.uniform(6, 9)
         bally = random.uniform(-10, -13)
@@ -467,12 +538,17 @@ def decreasetimer():
         timer -= 1
 
 def startspeedshot():
+    global timer
+    timer = 9 
     if hasattr(draw, "speed_shot_ranked"):
         del draw.speed_shot_ranked
     clock.unschedule(decreasetimer)  # Stop any previous timer
     clock.schedule_interval(decreasetimer, 1.0)
 
 def startgames():
+    global timer
+    timer = 9
+    start_sound.play()
     if hasattr(draw, "games_ranked"):
         del draw.games_ranked
     clock.unschedule(decreasetimer)  # Stop any previous timer
@@ -483,18 +559,8 @@ def logicForSpeedShot():
     player.draw()
     ball.draw()
     screen.draw.filled_rect(righthoop, (0, 0, 0))
-    screen.draw.text("Score: " + str(speedshotscore), center=(WIDTH // 2, 150), color="black", fontsize=40)
-    screen.draw.text("Timer: " + str(timer), center = (WIDTH // 2, 180), color="black", fontsize=40)
-    # Home button
-    screen.draw.filled_rect(homebutton, "#baf3f7")
-    screen.draw.text("Home", center=homebutton.center, color="black", fontsize = 28) 
-
-def logicForGames():
-    global counter, speedshotscore, button_pressed,timer_on
-    player.draw()
-    ball.draw()
-    screen.draw.filled_rect(righthoop, (0, 0, 0))
-
+    screen.draw.text("Score: " + str(speedshotscore), center=(WIDTH // 2, 60), color="black", fontsize=40)
+    screen.draw.text("Timer: " + str(timer), center = (WIDTH // 2, 100), color="black", fontsize=40)
     # Home button
     screen.draw.filled_rect(homebutton, "#baf3f7")
     screen.draw.text("Home", center=homebutton.center, color="black", fontsize = 28) 
@@ -508,10 +574,8 @@ def shoot_ai():
 
 #should always be last
 def update():
-    global counter, ballx, bally, speedshotscore, timer_on
+    global counter, ballx, bally, speedshotscore, timer_on, ball_owner, score_p1, score_p2
     if counter == "Games":
-        global playerscore, aiscore, ball_owner, ball_in_motion, timer_on, prediction_timer
-        # Player movement (arrow keys)
         if keyboard.up:
             player.y -= 3
         if keyboard.down:
@@ -520,7 +584,6 @@ def update():
             player.x -= 3
         if keyboard.right:
             player.x += 3
-        distance = ai_player.distance_to(player)
         # Keep player in bounds (same as Fast Footwork)
         if player.bottom < 406:
             player.bottom = 406
@@ -531,20 +594,14 @@ def update():
         if player.right > 860:
             player.right = 860
         if ball.colliderect(righthoopbackboard):
+            board_bounce_sound.play()
             ballx = -ballx * 0.8
             ball.x += ballx
         if ballcounter == False:
             ball.x = player.x - 6
             ball.y = player.y
-        if ballcounter == True:
-            ball.x += ballx
-            ball.y += bally
-            bally += gravity
-            if ball.colliderect(righthoop):
-                playerscore += 1
-                resetball()
-            if ball.y > HEIGHT or ball.x > WIDTH:
-                resetball()
+        
+        distance = ai_player.distance_to(player)
         # AI behavior
         if not ball_in_motion:
             if ball_owner == 'ai':
@@ -594,6 +651,16 @@ def update():
                     ai_player.x += 3 if ai_player.x < targetx else -3
                 if abs(ai_player.y - targety) > 2:
                     ai_player.y += 3 if ai_player.y < targety else -3
+
+                #if ai_player.x < targetx:
+                    #ai_player.x += 3
+                #elif ai_player.x > targetx:
+                    #ai_player.x -= 3
+                #if ai_player.y < targety:
+                    #ai_player.y += 3
+                #elif ai_player.y > targety:
+                    #ai_player.y -= 3
+
         # Steal ball if close enough
         if not ball_in_motion and ball_owner == 'player' and distance < 30:
             ball_owner = 'ai'
@@ -623,18 +690,20 @@ def update():
                 ball.x = ai_player.x - 6
                 ball.y = ai_player.y
         else:
-            ball.x += ballx
+            ball.x += ballx 
             ball.y += bally
             bally += gravity
 
             if ball.colliderect(left_hoop) and ball_owner == 'ai':
-                aiscore += 1
+                score_p2 += 1
+                score_sound.play()
                 ball.x = player.x - 6
                 ball.y = player.y
                 reset_ball(player)
                 ball_owner = 'player'
             elif ball.colliderect(right_hoop) and ball_owner == 'player':
-                playerscore += 1
+                score_p1 += 1
+                score_sound.play()
                 ball.x = ai_player.x - 6
                 ball.y = ai_player.y
                 reset_ball(ai_player)
@@ -646,8 +715,6 @@ def update():
                 else:
                     reset_ball(player)
                     ball_owner = 'player'
-
-    
     if counter == "Speed Shot":
         if keyboard.up:
             player.y -= 3
@@ -667,6 +734,7 @@ def update():
         if player.right > 860:
             player.right = 860
         if ball.colliderect(righthoopbackboard):
+            board_bounce_sound.play()
             ballx = -ballx * 0.8
             ball.x += ballx
         if ballcounter == False:
@@ -678,6 +746,7 @@ def update():
             bally += gravity
             if ball.colliderect(righthoop):
                 speedshotscore += 1
+                score_sound.play()
                 resetball()
             if ball.y > HEIGHT or ball.x > WIDTH:
                 resetball()
