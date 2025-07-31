@@ -1,1 +1,7 @@
 .DS_Store
+/build/*
+/dist/*
+/venv/
+/__pycache__/
+*.pyc
+/build/web/basketball_game.apk  
